@@ -69,7 +69,12 @@ func main() {
 		_, _ = fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Println(decoded[os.Args[1]])
+	cmd, ok := decoded[os.Args[1]]
+	if ok {
+		fmt.Println(cmd)
+	} else {
+		fmt.Printf("Command '%s' not found.\n", os.Args[1])
+	}
 }
 
 type Command struct {
