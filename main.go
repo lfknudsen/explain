@@ -21,9 +21,20 @@ var executableDir = filepath.Dir(getExecutable())
 var dbFile = filepath.Join(executableDir, ".explain.toml")
 
 func printHelp() {
-	fmt.Print("explain <command>		Print an explanation of the given command.\n" +
-		"explain --edit           Open the database file.\n" +
-		"explain --help           Print this message and exit.\n")
+	fmt.Print(
+		"explain <command>        Print an explanation of the given command.\n" +
+			"explain --edit           Open the database file.\n" +
+			"explain --help           Print this message and exit.\n\n" +
+			"The database is a TOML file. Each entry in the file should have the following format:\n" +
+			"[<key>]\n" +
+			"Name=\"<name of the command>\"\n" +
+			"Desc=\"<description>\"\n" +
+			"Source=\"<where to download it>\"\n\n" +
+			"Example:\n" +
+			"[install]\n" +
+			"Name=\"install\"\n" +
+			"Desc=\"Move the given files to the same directory as this executable.\"\n" +
+			"Source=\"https://codeberg.org/lfknudsen/install\"\n")
 }
 
 func main() {
