@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"strconv"
+	"regexp"
+	html2 "html"
 
 	"github.com/BurntSushi/toml"
 	"gitlab.com/golang-commonmark/markdown"
@@ -182,13 +184,24 @@ func find(filename string) *[]byte {
 	return nil
 }
 
+func removeNewlines(s string) string {
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\\", "\n")
+	return s
+}
+
 func printMarkdown(buffer *[]byte) {
 	md := markdown.New()
 	html := md.RenderToString(*buffer)
 
+	rx := regexp.MustCompile("(?s)<p>.*?</p>")
+	html = rx.ReplaceAllStringFunc(html, removeNewlines)
+
 	html = strings.Replace(html, "<p>", "", -1)
 	html = strings.Replace(html, "</p>", "", -1)
 	html = strings.Replace(html, "<br/>", "\n", -1)
+	html = strings.Replace(html, "<br>", "\n", -1)
 	html = strings.Replace(html, "<i>", "\033[003m", -1)
 	html = strings.Replace(html, "</i>", "", -1)
 	
@@ -276,6 +289,9 @@ func printMarkdown(buffer *[]byte) {
 	html = strings.Replace(html, "</h4>", "\033[0m", -1)
 	html = strings.Replace(html, "<h5>", "\033[002m", -1)
 	html = strings.Replace(html, "</h5>", "\033[0m", -1)
+
+	html = html2.UnescapeString(html)
+
 	fmt.Print(html)
 }
 
