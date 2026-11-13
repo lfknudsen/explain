@@ -86,7 +86,9 @@ func main() {
 			os.Exit(0)
 		case "-e", "--edit":
 			if hasNext() {
-				err := open(filepath.Join(dbDir, next()+".toml"))
+				path := filepath.Join(dbDir, next()+".toml")
+				_, _ = os.OpenFile(path, os.O_CREATE|os.O_EXCL, 644)
+				err := open(path)
 				if err != nil {
 					_, _ = fmt.Fprint(os.Stderr, err)
 					os.Exit(1)
@@ -101,7 +103,7 @@ func main() {
 }
 
 func getCommand(name string) {
-	b, err := os.ReadFile(filepath.Join(dbDir, name + ".toml"))
+	b, err := os.ReadFile(filepath.Join(dbDir, name+".toml"))
 	if err != nil {
 		fmt.Printf("Command '%s' not found.\n", name)
 		os.Exit(1)
