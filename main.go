@@ -138,7 +138,7 @@ func main() {
 func findFile(cmdName string) string {
 	for _, dir := range manDirs {
 		path := filepath.Join(dir, cmdName)
-		_, err := os.Stat(cmdName)
+		_, err := os.Stat(path)
 		if err == nil {
 			return path
 		}
