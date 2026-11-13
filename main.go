@@ -43,10 +43,11 @@ func printHelp() {
 }
 
 func initDB() {
+	_ = os.MkdirAll(dbDir, 644)
 	dbFile := filepath.Join(dbDir, "explain.toml")
-	f, err := os.OpenFile(dbFile, os.O_WRONLY|os.O_CREATE, 0600)
+	f, err := os.OpenFile(dbFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
-		_, _ = fmt.Fprint(os.Stderr, err)
+		return
 	}
 	base := filepath.Base(executable)
 	stem := strings.TrimSuffix(base, ".exe")
@@ -76,7 +77,7 @@ func main() {
 		printHelp()
 		os.Exit(0)
 	}
-	_ = os.MkdirAll(dbDir, 644)
+	initDB()
 	for hasNext() {
 		arg := next()
 		switch arg {
@@ -93,8 +94,6 @@ func main() {
 				os.Exit(0)
 			}
 			os.Exit(1)
-		case "--init":
-			initDB()
 		default:
 			getCommand(arg)
 		}
@@ -116,8 +115,6 @@ func getCommand(name string) {
 	fmt.Println(*decoded)
 }
 
-
-
 type Command struct {
 	Name   string
 	Desc   string
@@ -125,5 +122,17 @@ type Command struct {
 }
 
 func (c Command) String() string {
-	return fmt.Sprintf("%s:\n%s\nSource: %s", c.Name, c.Desc, c.Source)
+	name := c.Name
+	if c.Name == "" {
+		name = "No name"
+	}
+	desc := c.Desc
+	if desc == "" {
+		desc = "No description."
+	}
+	source := c.Source
+	if source != "" {
+		source = "\nSource: " + source
+	}
+	return fmt.Sprintf("%s:\n%s%s", name, desc, source)
 }
