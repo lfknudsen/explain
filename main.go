@@ -22,14 +22,17 @@ var executable = getExecutable()
 var dbDir = filepath.Join(filepath.Dir(executable), "man")
 var manDirs = []string { dbDir }
 
-const description = `explain <command>        Print an explanation of the given command.
-explain --edit           Open the database file.
-explain --help           Print this message and exit.
+const description = `explain <command>            Print an explanation of the given command.
+explain --edit <command>     Open the command's manual file for editing.
+explain --add <command>      Create a manual page for the command.
+explain --paths              Print a list of all directories where the programme will look for manual files.
+explain --help               Print this message and exit.
 
 Each man page is a TOML file. The file should have the following format:
 Name="<name of the command>"
 Desc="<description>"
 Source="<where to download it>"
+Multi-line strings start and end with \"\"\" or '''
 
 Example:
 Name="install"
@@ -43,15 +46,15 @@ func printHelp() {
 
 func initDB() {
 	_ = os.MkdirAll(dbDir, 644)
-	dbFile := filepath.Join(dbDir, "explain.toml")
+	base := filepath.Base(executable)
+	stem := strings.TrimSuffix(base, ".exe")
+	dbFile := filepath.Join(dbDir, stem+".toml")
 	f, err := os.OpenFile(dbFile, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return
 	}
-	base := filepath.Base(executable)
-	stem := strings.TrimSuffix(base, ".exe")
-	out := fmt.Sprintf("Name=\"explain\"\n", stem)
-	out += fmt.Sprintf("Desc = '''\n%s'''\n", description)
+	out := fmt.Sprintf("Name=\"explain\"\n")
+	out += fmt.Sprintf("Desc = \"\"\"\n%s\"\"\"\n", description)
 	out += fmt.Sprintf("Source=\"https://codeberg.org/lfknudsen/explain\"\n")
 	_, err = f.WriteString(out)
 	if err != nil {
