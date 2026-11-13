@@ -119,13 +119,7 @@ func main() {
 			if !hasNext() {
 				os.Exit(1)
 			}
-			path = filepath.Join(dbDir, next()+".toml")
-			_, _ = os.OpenFile(path, os.O_CREATE|os.O_EXCL, 644)
-			err = open(path)
-			if err != nil {
-				_, _ = fmt.Fprint(os.Stderr, err)
-				os.Exit(1)
-			}
+			addFile(next())
 		case "--paths":
 			for _, p := range manDirs {
 				fmt.Println(p)
@@ -133,6 +127,31 @@ func main() {
 		default:
 			getCommand(arg)
 		}
+	}
+}
+
+func addFile(cmdName string) {
+	path := filepath.Join(dbDir, cmdName+".toml")
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 644)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "A manual page for %s already exists.", cmdName)
+		os.Exit(1)
+	}
+	out := fmt.Sprintln("Name=\"\"")
+	out += fmt.Sprintln("Desc = \"\"\"\n\"\"\"")
+	out += fmt.Sprintln("Source=\"\"")
+	_, err = f.WriteString(out)
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+		_ = f.Close()
+		os.Exit(1)
+	}
+	_ = f.Close()
+
+	err = open(path)
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+		os.Exit(1)
 	}
 }
 
