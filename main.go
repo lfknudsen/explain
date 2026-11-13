@@ -17,10 +17,8 @@ func getExecutable() string {
 	}
 	return e
 }
-
 var executable = getExecutable()
-var executableDir = filepath.Dir(executable)
-var dbFile = filepath.Join(executableDir, ".explain.toml")
+var dbFile = filepath.Join(filepath.Dir(executable), ".explain.toml")
 
 const description = `explain <command>        Print an explanation of the given command.
 explain --edit           Open the database file.
