@@ -42,6 +42,8 @@ The manual files are .toml files with three named strings:
 
 You can execute `explain --edit explain` to see an example.
 
+Markdown are also supported, and will be rendered.
+
 ## Example
 
 Executing this:
