@@ -52,14 +52,17 @@ $ explain explain
 Would output this:
 ```
 explain:
-explain <command>        Print an explanation of the given command.
-explain --edit           Open the database file.
-explain --help           Print this message and exit.
+explain <command>            Print an explanation of the given command.
+explain --edit <command>     Open the command's manual file for editing.
+explain --add <command>      Create a manual page for the command.
+explain --paths              Print a list of all directories where the programme will look for manual files.
+explain --help               Print this message and exit.
 
 Each man page is a TOML file. The file should have the following format:
 Name="<name of the command>"
 Desc="<description>"
 Source="<where to download it>"
+Multi-line strings start and end with """ or '''
 
 Example:
 Name="install"
