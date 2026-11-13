@@ -26,14 +26,12 @@ const description = `explain <command>        Print an explanation of the given 
 explain --edit           Open the database file.
 explain --help           Print this message and exit.
 
-The database is a TOML file. Each entry in the file should have the following format:
-[<key>]
+Each man page is a TOML file. The file should have the following format:
 Name="<name of the command>"
 Desc="<description>"
 Source="<where to download it>"
 
 Example:
-[install]
 Name="install"
 Desc="Move the given files to the same directory as this executable."
 Source="https://codeberg.org/lfknudsen/install"
