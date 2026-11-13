@@ -210,7 +210,7 @@ func (c Command) String() string {
 	}
 	source := c.Source
 	if source != "" {
-		source = "\nSource: " + source
+		source = "\n\033[94mSource\033[0m: " + source
 	}
-	return fmt.Sprintf("%s:\n%s%s", name, desc, source)
+	return fmt.Sprintf("\033[93m%s\033[0m:\n%s%s", name, desc, source)
 }
