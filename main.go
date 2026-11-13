@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"gitlab.com/golang-commonmark/markdown"
 )
 
 func getExecutable() string {
@@ -105,10 +106,13 @@ func main() {
 				os.Exit(1)
 			}
 			name := next()
-			path = findFile(name)
+			path = findFile(name + ".toml")
 			if path == "" {
-				fmt.Printf("Could not find %s. Try executing 'explain --add %s' to create the file.", name, name) 
-				os.Exit(1)
+				path = findFile(name + ".md")
+				if path == "" {
+					fmt.Printf("Could not find %s. Try executing 'explain --add %s' to create the file.", name, name) 
+					os.Exit(1)
+				}
 			}
 			err = open(path)
 			if err != nil {
@@ -177,12 +181,49 @@ func find(filename string) *[]byte {
 	return nil
 }
 
+func printMarkdown(buffer *[]byte) {
+	md := markdown.New()
+	html := md.RenderToString(*buffer)
+	
+	html = strings.Replace(html, "<p>", "", -1)
+	html = strings.Replace(html, "</p>", "", -1)
+	html = strings.Replace(html, "<pre>", "\n", -1)
+	html = strings.Replace(html, "</pre>", "", -1)
+	html = strings.Replace(html, "<code>", "\033[007m", -1)
+	html = strings.Replace(html, "</code>", "\033[0m", -1)
+
+	parts := strings.Split(html, "\n")
+	colour := "0"
+	for i, part := range parts {
+		colourIndex := strings.LastIndex(part, "\033[")
+		if colourIndex != -1 {
+			colourIndex += len("\033[")
+			colourEndsAt := strings.IndexByte(part[colourIndex:], 'm')
+			if colourEndsAt != -1 {
+				colour = part[colourIndex:colourIndex + colourEndsAt]
+			}
+		}
+		if !strings.HasPrefix(part, "<") {
+			parts[i] = "\033[0m  \033[" + colour + "m" + parts[i]
+		}
+	}
+
+	html = strings.Join(parts, "\n")
+
+	html = strings.Replace(html, "<h1>", "\033[94m", -1)
+	html = strings.Replace(html, "</h1>", "\033[0m\n", -1)
+	html = strings.Replace(html, "<h2>", "\033[95m", -1)
+	html = strings.Replace(html, "</h2>", "\033[0m", -1)
+
+	fmt.Print(html)
+}
+
 func getCommand(name string) {
 	buffer := find(name + ".toml")
 	if buffer == nil {
 		buffer = find(name + ".md")
 		if buffer != nil {
-			fmt.Println(string(*buffer))
+			printMarkdown(buffer)
 			return
 		}
 		fmt.Printf("Command '%s' not found.\n", name)
