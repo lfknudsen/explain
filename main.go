@@ -20,6 +20,7 @@ func getExecutable() string {
 
 var executable = getExecutable()
 var dbDir = filepath.Join(filepath.Dir(executable), "man")
+var manDirs = []string { dbDir }
 
 const description = `explain <command>        Print an explanation of the given command.
 explain --edit           Open the database file.
@@ -77,39 +78,94 @@ func main() {
 		printHelp()
 		os.Exit(0)
 	}
+
+	env, found := os.LookupEnv("PATH")
+	if found {
+		paths := strings.Split(env, ";")
+		if len(paths) == 1 {
+			paths = strings.Split(env, ":")
+		}
+		manDirs = append(manDirs, paths...)
+	}
+
 	initDB()
+
+	var err error
+	var path string
+
 	for hasNext() {
 		arg := next()
 		switch arg {
 		case "-h", "--help":
 			printHelp()
 			os.Exit(0)
-		case "-e", "--edit":
-			if hasNext() {
-				path := filepath.Join(dbDir, next()+".toml")
-				_, _ = os.OpenFile(path, os.O_CREATE|os.O_EXCL, 644)
-				err := open(path)
-				if err != nil {
-					_, _ = fmt.Fprint(os.Stderr, err)
-					os.Exit(1)
-				}
-				os.Exit(0)
+		case "-e", "--edit": 
+			if !hasNext() {
+				os.Exit(1)
 			}
-			os.Exit(1)
+			name := next()
+			path = findFile(name)
+			if path == "" {
+				fmt.Printf("Could not find %s. Try executing 'explain --add %s' to create the file.", name, name) 
+				os.Exit(1)
+			}
+			err = open(path)
+			if err != nil {
+				_, _ = fmt.Fprint(os.Stderr, err)
+				os.Exit(1)
+			}
+		case "-a", "--add":
+			if !hasNext() {
+				os.Exit(1)
+			}
+			path = filepath.Join(dbDir, next()+".toml")
+			_, _ = os.OpenFile(path, os.O_CREATE|os.O_EXCL, 644)
+			err = open(path)
+			if err != nil {
+				_, _ = fmt.Fprint(os.Stderr, err)
+				os.Exit(1)
+			}
+		case "--paths":
+			for _, p := range manDirs {
+				fmt.Println(p)
+			}
 		default:
 			getCommand(arg)
 		}
 	}
 }
 
+func findFile(cmdName string) string {
+	for _, dir := range manDirs {
+		path := filepath.Join(dir, cmdName)
+		_, err := os.Stat(cmdName)
+		if err == nil {
+			return path
+		}
+	}
+	return ""
+}
+
+func findAndRead(cmdName string) *[]byte {
+	cmdName += ".toml"
+	for _, dir := range manDirs {
+		path := filepath.Join(dir, cmdName)
+		buffer, err := os.ReadFile(path)
+		if err == nil {
+			return &buffer
+		}
+	}
+	return nil
+}
+
 func getCommand(name string) {
-	b, err := os.ReadFile(filepath.Join(dbDir, name+".toml"))
-	if err != nil {
+	buffer := findAndRead(name)
+	if buffer == nil {
 		fmt.Printf("Command '%s' not found.\n", name)
 		os.Exit(1)
 	}
 	decoded := new(Command)
-	err = toml.Unmarshal(b, &decoded)
+	err := toml.Unmarshal(*buffer, &decoded)
 	if err != nil {
 		_, _ = fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
