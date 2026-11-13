@@ -185,6 +185,8 @@ func find(filename string) *[]byte {
 }
 
 func removeNewlines(s string) string {
+	s = strings.ReplaceAll(s, "\n\n", "\\")
+	s = strings.ReplaceAll(s, "\r\n\r\n", "\\")
 	s = strings.ReplaceAll(s, "\r", "")
 	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.ReplaceAll(s, "\\", "\n")
