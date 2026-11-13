@@ -166,10 +166,9 @@ func findFile(cmdName string) string {
 	return ""
 }
 
-func findAndRead(cmdName string) *[]byte {
-	cmdName += ".toml"
+func find(filename string) *[]byte {
 	for _, dir := range manDirs {
-		path := filepath.Join(dir, cmdName)
+		path := filepath.Join(dir, filename)
 		buffer, err := os.ReadFile(path)
 		if err == nil {
 			return &buffer
@@ -179,8 +178,13 @@ func findAndRead(cmdName string) *[]byte {
 }
 
 func getCommand(name string) {
-	buffer := findAndRead(name)
+	buffer := find(name + ".toml")
 	if buffer == nil {
+		buffer = find(name + ".md")
+		if buffer != nil {
+			fmt.Println(string(*buffer))
+			return
+		}
 		fmt.Printf("Command '%s' not found.\n", name)
 		os.Exit(1)
 	}
