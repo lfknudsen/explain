@@ -32,3 +32,39 @@ explain --edit <command name>
 ```
 go build
 ```
+
+## File Format
+
+The manual files are .toml files with three named strings:
+- Name
+- Desc
+- Source
+
+You can execute `explain --edit explain` to see an example.
+
+## Example
+
+Executing this:
+```
+$ explain explain
+```
+
+Would output this:
+```
+explain:
+explain <command>        Print an explanation of the given command.
+explain --edit           Open the database file.
+explain --help           Print this message and exit.
+
+Each man page is a TOML file. The file should have the following format:
+Name="<name of the command>"
+Desc="<description>"
+Source="<where to download it>"
+
+Example:
+Name="install"
+Desc="Move the given files to the same directory as this executable."
+Source="https://codeberg.org/lfknudsen/install"
+
+Source: https://codeberg.org/lfknudsen/explain
+```
