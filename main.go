@@ -17,8 +17,9 @@ func getExecutable() string {
 	}
 	return e
 }
+
 var executable = getExecutable()
-var dbFile = filepath.Join(filepath.Dir(executable), ".explain.toml")
+var dbDir = filepath.Join(filepath.Dir(executable), "man")
 
 const description = `explain <command>        Print an explanation of the given command.
 explain --edit           Open the database file.
@@ -41,54 +42,81 @@ func printHelp() {
 	fmt.Print(description)
 }
 
+func initDB() {
+	dbFile := filepath.Join(dbDir, "explain.toml")
+	f, err := os.OpenFile(dbFile, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+	}
+	base := filepath.Base(executable)
+	stem := strings.TrimSuffix(base, ".exe")
+	out := fmt.Sprintf("Name=\"explain\"\n", stem)
+	out += fmt.Sprintf("Desc = '''\n%s'''\n", description)
+	out += fmt.Sprintf("Source=\"https://codeberg.org/lfknudsen/explain\"\n")
+	_, err = f.WriteString(out)
+	if err != nil {
+		_, _ = fmt.Fprint(os.Stderr, err)
+	}
+	_ = f.Close()
+}
+
+func next() string {
+	out := os.Args[0]
+	os.Args = os.Args[1:]
+	return out
+}
+
+func hasNext() bool {
+	return len(os.Args) != 0
+}
+
 func main() {
-	if len(os.Args) != 2 {
+	next()
+	if !hasNext() {
 		printHelp()
+		os.Exit(0)
+	}
+	_ = os.MkdirAll(dbDir, 644)
+	for hasNext() {
+		arg := next()
+		switch arg {
+		case "-h", "--help":
+			printHelp()
+			os.Exit(0)
+		case "-e", "--edit":
+			if hasNext() {
+				err := open(filepath.Join(dbDir, next()+".toml"))
+				if err != nil {
+					_, _ = fmt.Fprint(os.Stderr, err)
+					os.Exit(1)
+				}
+				os.Exit(0)
+			}
+			os.Exit(1)
+		case "--init":
+			initDB()
+		default:
+			getCommand(arg)
+		}
+	}
+}
+
+func getCommand(name string) {
+	b, err := os.ReadFile(filepath.Join(dbDir, name + ".toml"))
+	if err != nil {
+		fmt.Printf("Command '%s' not found.\n", name)
 		os.Exit(1)
 	}
-	switch os.Args[1] {
-	case "-h", "--help":
-		printHelp()
-		os.Exit(0)
-	case "-e", "--edit":
-		err := open(dbFile)
-		if err != nil {
-			_, _ = fmt.Fprint(os.Stderr, err)
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
-	contents, err := os.ReadFile(dbFile)
-	if err != nil {
-		f, err := os.OpenFile(dbFile, os.O_WRONLY|os.O_CREATE, 0600)
-		if err != nil {
-			_, _ = fmt.Fprint(os.Stderr, err)
-		}
-		base := filepath.Base(executable)
-		stem := strings.TrimSuffix(base, ".exe")
-		out := fmt.Sprintf("[%s]\nName=\"explain\"\n", stem)
-		out += fmt.Sprintf("Desc = '''\n%s'''\n", description)
-		out += fmt.Sprintf("Source=\"https://codeberg.org/lfknudsen/explain\"\n")
-		_, err = f.WriteString(out)
-		if err != nil {
-			_, _ = fmt.Fprint(os.Stderr, err)
-		}
-		_ = f.Close()
-	}
-	decoded := make(map[string]Command)
-	err = toml.Unmarshal(contents, &decoded)
+	decoded := new(Command)
+	err = toml.Unmarshal(b, &decoded)
 	if err != nil {
 		_, _ = fmt.Fprint(os.Stderr, err)
 		os.Exit(1)
 	}
-	cmd, ok := decoded[os.Args[1]]
-	if ok {
-		fmt.Println(cmd)
-	} else {
-		fmt.Printf("Command '%s' not found.\n", os.Args[1])
-	}
+	fmt.Println(*decoded)
 }
+
+
 
 type Command struct {
 	Name   string
